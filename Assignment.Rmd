@@ -1,0 +1,89 @@
+---
+title: "Peer-graded Assignment: Prediction Assignment Writeup"
+author: "Jones"
+date: "May 19, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <http://groupware.les.inf.puc-rio.br/har> (see the section on the Weight Lifting Exercise Dataset).
+
+## Getting Data with Summary
+
+The training data for this project are available here:
+<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv>
+```{r Data1, echo=TRUE}
+Data <- read.csv("pml-training.csv", na.strings=c("NA","#DIV/0!",""))
+summary(Data)
+```
+
+The test data are available here:
+<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv>
+```{r Data2, echo=TRUE}
+Test <- read.csv("pml-testing.csv", na.strings=c("NA","#DIV/0!",""))
+```
+
+The data for this project come from this source: <http://groupware.les.inf.puc-rio.br/har>. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## Cleaning Data with Summary
+
+In the Summary, we can find the below information that we can clean it out for the analysis:
+
+- Remove the first 7 column are information field that we do not need it.
+
+- Remove column with no data. 
+
+```{r clean, echo=TRUE}
+Data <- Data[,colSums(is.na(Data)) == 0]
+Test <- Test[,colSums(is.na(Test)) == 0]
+
+Data <- Data[,-c(1:7)]
+Test <- Test[,-c(1:7)]
+
+summary(Data)
+```
+
+## Define Data for Prediction and Validation
+
+We separte the data for two different dataset. (75% for forecast and 25% for testing)
+
+```{r sep, echo=TRUE, warning=FALSE, message=FALSE}
+library(caret)
+library(randomForest)
+Part <- createDataPartition(y=Data$classe, p=0.75, list=FALSE)
+DataTrain <- Data[Part, ] 
+Datavalid <- Data[-Part, ]
+```
+
+## Bulding a Model.
+
+For this project, I would like to use Breiman and Cutler's Random Forests for Classification and Regression
+
+```{r model, echo=TRUE, warning=FALSE, message=FALSE}
+ForestTrain <- randomForest(classe ~ ., data = DataTrain)
+```
+
+## Prediction with Validation
+
+After build the model, we need to validify the model if it fit for the prediction
+
+```{r Pred, echo=TRUE}
+PredictTrain <- predict(ForestTrain, Datavalid)
+confusionMatrix(PredictTrain, Datavalid$classe)
+```
+
+The confusion matrix created gives an accuracy of 99.6% for the Random Forests. The expected out of sample error is estimated at 4%. So we can believe that the prediction is accuracy and we can use it as further prediction
+
+## Prediction with Test Data
+
+We run the perdiction model and final get the below assignment answer for the course test csv. 
+
+```{r Test, echo=TRUE}
+PredictTest <- predict(ForestTrain, Test)
+PredictTest
+```
